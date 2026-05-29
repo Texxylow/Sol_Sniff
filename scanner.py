@@ -1,22 +1,13 @@
 import time
-from typing import Optional
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 router = APIRouter()
 
-# ── In-memory cache ──────────────────────────────────────────────────────────
-_cache: dict = {}
+# ── CACHE ─────────────────────────────────────────────
+_cache = {}
+CACHE_TTL = 180  # 3 minutes
 
-
-@router.get("/tokens")
-async def get_tokens():
-    async with httpx.AsyncClient() as client:
-        result = await fetch_new_pools(client)
-        return {"debug": result}
-# ── In-memory cache ──────────────────────────────────────────────────────────
-_cache: dict = {}
-CACHE_TTL = 60  # seconds
 
 def _get_cache(key: str):
     entry = _cache.get(key)
@@ -24,8 +15,37 @@ def _get_cache(key: str):
         return entry["data"]
     return None
 
+
 def _set_cache(key: str, data):
     _cache[key] = {"data": data, "ts": time.time()}
+
+
+# ── API CALL ──────────────────────────────────────────
+async def fetch_new_pools(client: httpx.AsyncClient):
+    r = await client.get(
+        "https://api.geckoterminal.com/api/v2/networks/solana/new_pools",
+        timeout=10
+    )
+
+    if r.status_code == 429:
+        return []
+
+    return r.json().get("data", [])
+
+
+# ── ROUTE ─────────────────────────────────────────────
+@router.get("/tokens")
+async def get_tokens():
+    cached = _get_cache("tokens")
+    if cached:
+        return {"source": "cache", "debug": len(cached)}
+
+    async with httpx.AsyncClient() as client:
+        pools = await fetch_new_pools(client)
+
+    _set_cache("tokens", pools)
+
+    return {"source": "live", "debug": len(pools)}
 
 
 # ── External API helpers ──────────────────────────────────────────────────────
