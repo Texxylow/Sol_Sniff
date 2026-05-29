@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SolSniff — Early Solana Token Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ACCESS GATE  (shown until valid email + code entered)
+     ═══════════════════════════════════════════════════════════ -->
+<div id="gate-screen">
+  <div class="gate-blob gate-blob--purple"></div>
+  <div class="gate-blob gate-blob--blue"></div>
+
+  <div class="gate-card" id="gate-card">
+    <div class="gate-shimmer"></div>
+
+    <!-- ★ GATE LOGO — logo.jpg displayed at 64×64 -->
+    <div class="gate-logo-wrap">
+      <div class="gate-logo-icon">
+        <img src="logo.jpg" alt="SolSniff logo" />
+      </div>
+      <h1 class="gate-title">SOLSNIFF</h1>
+      <p class="gate-subtitle">RESTRICTED ACCESS · ENTER CREDENTIALS</p>
+    </div>
+
+    <!-- fields -->
+    <div class="gate-fields">
+      <div class="gate-field">
+        <label class="gate-label">EMAIL ADDRESS</label>
+        <input id="gate-email" type="email" placeholder="your@email.com" autocomplete="email" />
+      </div>
+      <div class="gate-field">
+        <label class="gate-label">ACCESS CODE</label>
+        <input id="gate-code" type="text" placeholder="Enter code…" autocapitalize="characters" maxlength="20" class="code-input" />
+      </div>
+    </div>
+
+    <div id="gate-error" class="gate-error hidden"></div>
+
+    <button id="gate-btn" class="gate-btn">UNLOCK ACCESS →</button>
+
+    <p class="gate-note">
+      Don't have an access code?
+      <a href="https://x.com/EbenezerDYOR" target="_blank" rel="noopener">Contact Ebenezer ↗</a>
+    </p>
+    <p class="gate-usage" id="gate-usage">0 / 10 access slots used</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN APP  (hidden until access granted)
+     ═══════════════════════════════════════════════════════════ -->
+<div id="main-app" class="hidden">
+
+  <!-- ── Navigation ── -->
+  <nav id="main-nav">
+    <div class="nav-inner">
+
+      <!-- ★ NAV LOGO — logo.jpg displayed at 36×36 -->
+      <a class="logo" href="#dashboard">
+        <div class="logo-icon">
+          <img src="logo.jpg" alt="SolSniff logo" />
+        </div>
+        <span class="logo-text">SOLSNIFF</span>
+      </a>
+
+      <!-- Nav links — ALL THREE always visible -->
+      <div class="nav-links">
+        <button class="nav-link active" data-page="dashboard">DASHBOARD</button>
+        <button class="nav-link" data-page="track">TRACK</button>
+        <button class="nav-link" data-page="about">ABOUT</button>
+      </div>
+
+      <!-- Right side: creator credit + live indicator -->
+      <div class="nav-right">
+        <a href="https://x.com/EbenezerDYOR" target="_blank" rel="noopener" class="nav-creator">
+          by <span>Ebenezer</span>
+        </a>
+        <div class="nav-status">
+          <div class="status-dot"></div>
+          <span>LIVE</span>
+        </div>
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- ── App wrapper ── -->
+  <div id="app">
+
+    <!-- ══════════════════════════════════════ DASHBOARD PAGE -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h1 class="page-title">Early Token <span>Dashboard</span></h1>
+        <p class="page-subtitle">Top-ranked new Solana pools · Score ≥ 60 · Updated every 60 seconds</p>
+      </div>
+
+      <div class="meta-bar">
+        <div class="meta-stat"><span class="meta-label">TOKENS</span><span class="meta-val" id="token-count">—</span></div>
+        <div class="meta-stat"><span class="meta-label">SOURCE</span><span class="meta-val" id="data-source">—</span></div>
+        <div class="meta-stat"><span class="meta-label">UPDATED</span><span class="meta-val" id="last-update">—</span></div>
+        <div class="meta-right">
+          <div class="countdown-wrap">
+            <div class="countdown-track"><div class="countdown-fill" id="countdown-fill"></div></div>
+            <span id="countdown-text">60s</span>
+          </div>
+          <button class="refresh-btn" id="refresh-btn">REFRESH</button>
+        </div>
+      </div>
+
+      <div class="token-grid" id="token-grid">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span class="loading-text">SCANNING SOLANA POOLS…</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════ TRACK PAGE -->
+    <section class="page" id="page-track">
+      <div class="page-header">
+        <h1 class="page-title">Token <span>Tracker</span></h1>
+        <p class="page-subtitle">Analyze any Solana token — score breakdown, security audit, live metrics</p>
+      </div>
+
+      <div class="track-form">
+        <input id="track-input" class="track-address-input" type="text"
+          placeholder="Enter Solana token contract address…"
+          autocomplete="off" spellcheck="false" />
+        <button id="track-btn" class="track-btn">ANALYZE</button>
+      </div>
+
+      <div id="track-result">
+        <div class="empty-state">
+          <div class="empty-icon">🔎</div>
+          <div class="empty-title">ENTER AN ADDRESS ABOVE</div>
+          <div class="empty-desc">Paste any Solana mint address to get a full score breakdown, security audit, and live metrics.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════ ABOUT PAGE -->
+    <section class="page" id="page-about">
+
+      <!-- Hero -->
+      <div class="about-hero">
+
+        <!-- ★ ABOUT LOGO — logo.jpg displayed at 96×96 -->
+        <div class="about-logo-wrap">
+          <img src="logo.jpg" alt="SolSniff logo" class="about-logo-static" />
+
+        <p class="about-desc-primary">
+          SolSniff is a real-time early-token scanner built for Solana degens who want an edge.
+          It monitors newly launched liquidity pools, runs automated security checks, and surfaces
+          only the highest-signal opportunities — filtered hard so the noise stays out.
+        </p>
+        <p class="about-desc-secondary">
+          Think of it as your on-chain radar: always scanning, always scoring, always ranked.
+          No hype, no spam — just data-backed token intelligence refreshed every 60 seconds.
+        </p>
+      </div>
+
+      <!-- ★ BACKGROUND / BANNER IMAGE — background.jpg displayed full-width -->
+      <div class="about-banner">
+        <img src="background.jpg" alt="SolSniff banner" class="about-banner-img" />
+      </div>
+
+      <!-- Feature cards -->
+      <div class="about-cards">
+        <div class="about-card">
+          <div class="about-card-icon">⚡</div>
+          <div class="about-card-title">REAL-TIME SCANNING</div>
+          <div class="about-card-text">Pulls brand-new Solana liquidity pools from GeckoTerminal every 60 seconds, filtering only tokens under 24 hours old so you're always first to the signal.</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-icon">🛡</div>
+          <div class="about-card-title">SECURITY AUDIT</div>
+          <div class="about-card-text">Every token is cross-checked against GoPlus Security API — honeypot detection, mint authority, freeze authority, and holder concentration all in one pass.</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-icon">📊</div>
+          <div class="about-card-title">SMART SCORING</div>
+          <div class="about-card-text">A 0–100 composite score weighing volume momentum, buy pressure, liquidity depth, price action, token age, and FDV attractiveness — with penalties for red flags.</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-icon">🚫</div>
+          <div class="about-card-title">HARSH FILTERS</div>
+          <div class="about-card-text">FDV &lt; $20K, liquidity &gt; $5K, 1h volume &gt; $5K. Not a honeypot, not mintable, holder concentration &lt; 80%. Only score ≥ 60 reaches the dashboard.</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-icon">🔗</div>
+          <div class="about-card-title">DEXSCREENER LINKS</div>
+          <div class="about-card-text">Every surfaced token links directly to its DexScreener page for live charts, swap history, and deeper on-chain analysis — one click away.</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-icon">🚀</div>
+          <div class="about-card-title">NO WALLET NEEDED</div>
+          <div class="about-card-text">Pure read-only scanner. No wallet connection, no authentication beyond your access code, no tracking. Just raw, unfiltered alpha delivered fast.</div>
+        </div>
+      </div>
+
+      <!-- Scoring table -->
+      <div class="about-table-card">
+        <div class="section-title-row">SCORING WEIGHTS</div>
+        <table class="scoring-table">
+          <thead>
+            <tr>
+              <th>CATEGORY</th>
+              <th>DESCRIPTION</th>
+              <th>PTS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Volume Momentum</td><td>1h trading volume strength</td><td>+25</td></tr>
+            <tr><td>Buy Pressure</td><td>Buy/sell tx ratio in 1h</td><td>+20</td></tr>
+            <tr><td>Liquidity Strength</td><td>Pool reserve depth</td><td>+20</td></tr>
+            <tr><td>Price Momentum</td><td>1h price change %</td><td>+15</td></tr>
+            <tr><td>Age Freshness</td><td>How recently the token launched</td><td>+10</td></tr>
+            <tr><td>FDV Attractiveness</td><td>Lower FDV = more upside potential</td><td>+10</td></tr>
+            <tr class="penalty-row"><td>Mintable Penalty</td><td>Owner can inflate the supply</td><td>−30</td></tr>
+            <tr class="penalty-row"><td>Freeze Auth Penalty</td><td>Wallets can be frozen</td><td>−20</td></tr>
+            <tr class="penalty-row"><td>Ownership Penalty</td><td>Contract ownership not renounced</td><td>−20</td></tr>
+            <tr class="penalty-row"><td>Concentration Penalty</td><td>Top 10 wallets hold &gt; 80%</td><td>−20</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Creator + disclaimer -->
+      <div class="about-footer">
+        <p class="about-creator">
+          Created by
+          <a href="https://x.com/EbenezerDYOR" target="_blank" rel="noopener" class="creator-link">Ebenezer ↗</a>
+        </p>
+        <p class="about-disclaimer">SOLSNIFF IS FOR INFORMATIONAL PURPOSES ONLY · NOT FINANCIAL ADVICE · DYOR</p>
+      </div>
+
+    </section>
+  </div><!-- /#app -->
+
+  <!-- Site footer -->
+  <footer class="site-footer">
+    <span class="footer-left">SOLSNIFF · NOT FINANCIAL ADVICE · DYOR</span>
+    <a href="https://x.com/EbenezerDYOR" target="_blank" rel="noopener" class="footer-creator">
+      Created by <strong>Ebenezer</strong> ↗
+    </a>
+  </footer>
+
+</div><!-- /#main-app -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
