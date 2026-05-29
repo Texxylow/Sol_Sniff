@@ -29,16 +29,17 @@ TIMEOUT = 10.0
 
 
 async def fetch_new_pools(client: httpx.AsyncClient) -> list:
-    try:
-        r = await client.get(
-            GECKO_URL,
-            params={"page": 1},
-            headers=HEADERS,
-            timeout=TIMEOUT,
+    r = await client.get(GECKO_URL, timeout=TIMEOUT)
+
+    print("GECKO STATUS:", r.status_code)
+    print("GECKO TEXT:", r.text[:300])
+
+    return []
         )
         r.raise_for_status()
         return r.json().get("data", [])
-    except Exception:
+    except Exception as e:
+        print("GECKO ERROR:", str(e))
         return []
 
 
@@ -54,7 +55,8 @@ async def fetch_security(client: httpx.AsyncClient, address: str) -> dict:
         result = r.json().get("result", {})
         # GoPlus returns a dict keyed by lowercased address
         return result.get(address.lower(), result.get(address, {}))
-    except Exception:
+    except Exception as e:
+        print("GECKO ERROR:", str(e))
         return {}
 
 
