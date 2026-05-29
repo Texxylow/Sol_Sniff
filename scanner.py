@@ -36,17 +36,32 @@ HEADERS = {"Accept": "application/json"}
 TIMEOUT = 10.0
 
 
-async def fetch_new_pools(client: httpx.AsyncClient) -> list:
+import time
+
+_cache = {"data": None, "time": 0}
+
+async def fetch_new_pools(client: httpx.AsyncClient):
+    global _cache
+
+    # return cached data if still fresh
+    if time.time() - _cache["time"] < 60 and _cache["data"] is not None:
+        return _cache["data"]
+
     r = await client.get(
         "https://api.geckoterminal.com/api/v2/networks/solana/new_pools",
         timeout=10
     )
 
-    return {
-        "status": r.status_code,
-        "text": r.text[:300]
-    }
+    # handle rate limit
+    if r.status_code == 429:
+        return []
 
+    data = r.json().get("data", [])
+
+    _cache["data"] = data
+    _cache["time"] = time.time()
+
+    return data
 
 async def fetch_security(client: httpx.AsyncClient, address: str) -> dict:
     try:
