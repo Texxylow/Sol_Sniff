@@ -1,14 +1,18 @@
-import asyncio
 import time
 from typing import Optional
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
-router = APIRouter("/tokens")
+router = APIRouter()
+
+# ── In-memory cache ──────────────────────────────────────────────────────────
+_cache: dict = {}
+
+
+@router.get("/tokens")
 async def get_tokens():
     async with httpx.AsyncClient() as client:
 
-        # 1. get pools
         pools = await fetch_new_pools(client)
 
         if not pools:
@@ -16,20 +20,16 @@ async def get_tokens():
 
         tokens = []
 
-        # 2. process each pool
         for pool in pools:
 
             attrs = pool.get("attributes", {})
-            security = {}  # keep simple for now or call fetch_security if needed
+            security = {}
 
-            # 3. score it
             score_data = compute_score(attrs, security)
 
-            # 4. filter it
             if not passes_filter(attrs, score_data):
                 continue
 
-            # 5. build final token
             token = build_token_dict(pool, security)
 
             if token:
