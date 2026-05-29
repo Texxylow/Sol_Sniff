@@ -11,14 +11,7 @@ _cache: dict = {}
 
 @router.get("/tokens")
 async def get_tokens():
-    async with httpx.AsyncClient() as client:
-
-        pools = await fetch_new_pools(client)
-
-        return {"debug_pools": len(pools)
-
-        if not pools:
-            return {"source": "empty", "tokens": []}
+    return {"status": "backend_alive"} []}
 
         tokens = []
 
