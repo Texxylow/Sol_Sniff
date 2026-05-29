@@ -36,15 +36,12 @@ async def fetch_new_pools(client: httpx.AsyncClient) -> list:
             headers=HEADERS,
             timeout=TIMEOUT,
         )
+
         r.raise_for_status()
         return r.json().get("data", [])
-    except Exception:
-        return []
-        )
-        r.raise_for_status()
-        return r.json().get("data", [])
+
     except Exception as e:
-        print("GECKO ERROR:", str(e))
+        print("GECKO ERROR:", repr(e))
         return []
 
 
