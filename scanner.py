@@ -12,10 +12,8 @@ _cache: dict = {}
 @router.get("/tokens")
 async def get_tokens():
     async with httpx.AsyncClient() as client:
-
-        pools = await fetch_new_pools(client)
-
-        return {"debug_pools": len(pools)}
+        result = await fetch_new_pools(client)
+        return {"debug": result}
 # ── In-memory cache ──────────────────────────────────────────────────────────
 _cache: dict = {}
 CACHE_TTL = 60  # seconds
@@ -39,20 +37,15 @@ TIMEOUT = 10.0
 
 
 async def fetch_new_pools(client: httpx.AsyncClient) -> list:
-    try:
-        r = await client.get(
-            GECKO_URL,
-            params={"page": 1},
-            headers=HEADERS,
-            timeout=TIMEOUT,
-        )
+    r = await client.get(
+        "https://api.geckoterminal.com/api/v2/networks/solana/new_pools",
+        timeout=10
+    )
 
-        r.raise_for_status()
-        return r.json().get("data", [])
-
-    except Exception as e:
-        print("GECKO ERROR:", repr(e))
-        return []
+    return {
+        "status": r.status_code,
+        "text": r.text[:300]
+    }
 
 
 async def fetch_security(client: httpx.AsyncClient, address: str) -> dict:
