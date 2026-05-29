@@ -14,8 +14,8 @@ async def get_tokens():
     async with httpx.AsyncClient() as client:
 
         pools = await fetch_new_pools(client)
-            return {"debug_pools":
-        len(pools)}
+
+        return {"debug_pools": len(pools)
 
         if not pools:
             return {"source": "empty", "tokens": []}
