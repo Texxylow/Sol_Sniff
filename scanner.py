@@ -31,21 +31,60 @@ async def fetch_new_pools(client: httpx.AsyncClient):
         return []
 
     return r.json().get("data", [])
+def compute_score(pool_attrs, security):
+    # your scoring logic
+    return {
+        "score": 0
+    }
 
+
+def passes_filter(pool_attrs, score_data):
+    # your filter logic
+    return True
+
+
+def build_token_dict(pool, security):
+    # your formatting logic
+    return {
+        "name": "example"
+    }
 
 # ── ROUTE ─────────────────────────────────────────────
 @router.get("/tokens")
 async def get_tokens():
     cached = _get_cache("tokens")
     if cached:
-        return {"source": "cache", "debug": len(cached)}
+        return {"source": "cache", "tokens": cached}
 
     async with httpx.AsyncClient() as client:
         pools = await fetch_new_pools(client)
 
-    _set_cache("tokens", pools)
+    tokens = []
 
-    return {"source": "live", "debug": len(pools)}
+    for pool in pools:
+
+        attrs = pool.get("attributes", {})
+        security = {}
+
+        # 1. score
+        score_data = compute_score(attrs, security)
+
+        # 2. filter
+        if not passes_filter(attrs, score_data):
+            continue
+
+        # 3. build token
+        token = build_token_dict(pool, security)
+
+        if token:
+            tokens.append(token)
+
+    _set_cache("tokens", tokens)
+
+    return {
+        "source": "live",
+        "tokens": tokens
+    }
 
 
 # ── External API helpers ──────────────────────────────────────────────────────
