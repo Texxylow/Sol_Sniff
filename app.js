@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Config ─────────────────────────────────────────────────────────────── */
-const API_BASE        = 'http://localhost:8000/api';
+const API_BASE        = 'https://sol-sniff.onrender.com';
 const REFRESH_SEC     = 60;
 const ACCESS_CODE     = 'NEZER';         // correct code (case-insensitive check)
 const MAX_USES        = 10;              // ← raise this number to allow more users
