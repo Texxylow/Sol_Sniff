@@ -29,12 +29,17 @@ TIMEOUT = 10.0
 
 
 async def fetch_new_pools(client: httpx.AsyncClient) -> list:
-    r = await client.get(GECKO_URL, timeout=TIMEOUT)
-
-    print("GECKO STATUS:", r.status_code)
-    print("GECKO TEXT:", r.text[:300])
-
-    return []
+    try:
+        r = await client.get(
+            GECKO_URL,
+            params={"page": 1},
+            headers=HEADERS,
+            timeout=TIMEOUT,
+        )
+        r.raise_for_status()
+        return r.json().get("data", [])
+    except Exception:
+        return []
         )
         r.raise_for_status()
         return r.json().get("data", [])
