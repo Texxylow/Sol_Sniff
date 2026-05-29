@@ -11,30 +11,11 @@ _cache: dict = {}
 
 @router.get("/tokens")
 async def get_tokens():
-    return {"status": "backend_alive"} []}
+    async with httpx.AsyncClient() as client:
 
-        tokens = []
+        pools = await fetch_new_pools(client)
 
-        for pool in pools:
-
-            attrs = pool.get("attributes", {})
-            security = {}
-
-            score_data = compute_score(attrs, security)
-
-            if not passes_filter(attrs, score_data):
-                continue
-
-            token = build_token_dict(pool, security)
-
-            if token:
-                tokens.append(token)
-
-        return {
-            "source": "live",
-            "tokens": tokens
-        }
-
+        return {"debug_pools": len(pools)}
 # ── In-memory cache ──────────────────────────────────────────────────────────
 _cache: dict = {}
 CACHE_TTL = 60  # seconds
