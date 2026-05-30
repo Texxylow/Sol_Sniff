@@ -104,7 +104,7 @@ async function attemptAccess() {
   const email = emailEl.value.trim().toLowerCase();
   const code  = codeEl.value.trim().toUpperCase();
 
-  if (!email  !email.includes('@')  !email.includes('.')) {
+  if (!email || !email.includes('@') || !email.includes('.')) {
     showGateError('Please enter a valid email address.');
     triggerShake(); return;
   }
