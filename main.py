@@ -48,7 +48,7 @@ async def access_status():
 # ── Scanner + frontend ────────────────────────────────────────────────────────
 app.include_router(scanner_router, prefix="/api")
 
-FRONTEND_DIR = Path(_file_).resolve().parent.parent / "frontend"
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
 # Serve everything in /frontend (css, js, images) at root
 app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
