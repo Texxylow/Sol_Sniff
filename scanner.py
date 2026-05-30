@@ -332,6 +332,54 @@ async def get_tokens():
     return {"source": "live", "tokens": tokens}
 
 
+GECKO_TOKEN_URL = "https://api.geckoterminal.com/api/v2/networks/solana/tokens/{}/pools"
+DEX_URL         = "https://api.dexscreener.com/latest/dex/tokens/{}"
+
+async def fetch_pools_for_token(client: httpx.AsyncClient, address: str) -> list:
+    try:
+        r = await client.get(GECKO_TOKEN_URL.format(address), headers=HEADERS, timeout=TIMEOUT)
+        r.raise_for_status()
+        return r.json().get("data", [])
+    except Exception:
+        return []
+
+async def fetch_dexscreener(client: httpx.AsyncClient, address: str) -> dict:
+    try:
+        r = await client.get(DEX_URL.format(address), headers=HEADERS, timeout=TIMEOUT)
+        r.raise_for_status()
+        pairs = r.json().get("pairs") or []
+        sol   = [p for p in pairs if p.get("chainId") == "solana"]
+        if not sol:
+            return {}
+        sol.sort(key=lambda p: safe_float(p.get("liquidity", {}).get("usd")), reverse=True)
+        return sol[0]
+    except Exception:
+        return {}ce": "live", **result}
+        def dex_to_attrs(pair: dict) -> dict:
+    if not pair:
+        return {}
+    created_iso = ""
+    ts = pair.get("pairCreatedAt")
+    if ts:
+        try:
+            import datetime
+            dt = datetime.datetime.fromtimestamp(int(ts)/1000, tz=datetime.timezone.utc)
+            created_iso = dt.isoformat()
+        except Exception:
+            pass
+    txns = pair.get("txns", {}).get("h1", {})
+    return {
+        "name":                    pair.get("baseToken", {}).get("name", "Unknown Token"),
+        "fdv_usd":                 safe_float(pair.get("fdv")),
+        "reserve_in_usd":          safe_float(pair.get("liquidity", {}).get("usd")),
+        "base_token_price_usd":    pair.get("priceUsd", "0"),
+        "pool_created_at":         created_iso,
+        "volume_usd":              {"h1": safe_float(pair.get("volume", {}).get("h1"))},
+        "price_change_percentage": {"h1": safe_float(pair.get("priceChange", {}).get("h1"))},
+        "transactions":            {"h1": {"buys": safe_int(txns.get("buys")), "sells": safe_int(txns.get("sells"))}},
+        "address":                 pair.get("pairAddress", ""),
+    }
+
 @router.get("/track/{address}")
 async def track_token(address: str):
     cache_key = f"track_{address}"
@@ -340,23 +388,35 @@ async def track_token(address: str):
         return {"source": "cache", **cached}
 
     async with httpx.AsyncClient() as client:
-        # Fetch security data
         security = await fetch_security(client, address)
+        pools    = await fetch_new_pools(client)
 
-        # Try to find pool data for this token
-        pools = await fetch_new_pools(client)
-
-    # Find matching pool
-    pool_attrs = {}
+    # 1. Search new pools
+    pool_attrs   = {}
     pool_address = ""
     for pool in pools:
-        rels     = pool.get("relationships", {})
-        token_id = rels.get("base_token", {}).get("data", {}).get("id", "")
+        token_id = pool.get("relationships", {}).get("base_token", {}).get("data", {}).get("id", "")
         addr     = token_id.replace("solana_", "") if "solana_" in token_id else token_id
         if addr.lower() == address.lower():
-            pool_attrs = pool.get("attributes", {})
+            pool_attrs   = pool.get("attributes", {})
             pool_address = pool_attrs.get("address", "")
             break
+
+    # 2. GeckoTerminal token-specific pools
+    if not pool_attrs:
+        async with httpx.AsyncClient() as client:
+            token_pools = await fetch_pools_for_token(client, address)
+        if token_pools:
+            token_pools.sort(key=lambda p: safe_float(p.get("attributes", {}).get("reserve_in_usd")), reverse=True)
+            pool_attrs   = token_pools[0].get("attributes", {})
+            pool_address = pool_attrs.get("address", "")
+
+    # 3. DexScreener fallback
+    if not pool_attrs:
+        async with httpx.AsyncClient() as client:
+            pair       = await fetch_dexscreener(client, address)
+        pool_attrs   = dex_to_attrs(pair)
+        pool_address = pool_attrs.get("address", "")
 
     score_data = compute_score(pool_attrs, security)
 
@@ -368,19 +428,18 @@ async def track_token(address: str):
                f"https://dexscreener.com/solana/{address}"
 
     result = {
-        "address": address,
-        "name": name,
-        "fdv": round(safe_float(pool_attrs.get("fdv_usd")), 2),
-        "liquidity": round(safe_float(pool_attrs.get("reserve_in_usd")), 2),
-        "volume_1h": round(safe_float(pool_attrs.get("volume_usd", {}).get("h1")), 2),
-        "price_usd": pool_attrs.get("base_token_price_usd", "N/A"),
+        "address":         address,
+        "name":            name,
+        "fdv":             round(safe_float(pool_attrs.get("fdv_usd")), 2),
+        "liquidity":       round(safe_float(pool_attrs.get("reserve_in_usd")), 2),
+        "volume_1h":       round(safe_float(pool_attrs.get("volume_usd", {}).get("h1")), 2),
+        "price_usd":       str(pool_attrs.get("base_token_price_usd", "0") or "0"),
         "price_change_1h": round(safe_float(pool_attrs.get("price_change_percentage", {}).get("h1")), 2),
-        "score": score_data["score"],
-        "breakdown": score_data["breakdown"],
-        "security_flags": score_data["security_flags"],
-        "age_hours": score_data["age_hours"],
-        "dex_link": dex_link,
-        "raw_security": security,
+        "score":           score_data["score"],
+        "breakdown":       score_data["breakdown"],
+        "security_flags":  score_data["security_flags"],
+        "age_hours":       score_data["age_hours"],
+        "dex_link":        dex_link,
     }
 
     _set_cache(cache_key, result)
