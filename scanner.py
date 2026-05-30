@@ -118,7 +118,7 @@ def dex_pair_to_attrs(pair: dict) -> dict:
     """Convert a DexScreener pair dict into the same shape as GeckoTerminal attrs."""
     if not pair:
         return {}
-        liquidity = safe_float(pair.get("liquidity", {}).get("usd"))
+    liquidity = safe_float(pair.get("liquidity", {}).get("usd"))
     volume_1h = safe_float(pair.get("volume", {}).get("h1"))
     fdv       = safe_float(pair.get("fdv"))
     price     = pair.get("priceUsd", "0")
@@ -406,8 +406,9 @@ async def track_token(address: str):
             if addr.lower() == address.lower():
                 pool_attrs   = pool.get("attributes", {})
                 pool_address = pool_attrs.get("address", "")
-                break 
-# 2. Not in new pools → try GeckoTerminal token-specific pools
+               break
+
+        # 2. Not in new pools → try GeckoTerminal token-specific pools
         if not pool_attrs:
             token_pools = await fetch_pools_for_token(client, address)
             if token_pools:
