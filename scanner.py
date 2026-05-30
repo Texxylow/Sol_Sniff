@@ -115,17 +115,15 @@ async def fetch_security(client: httpx.AsyncClient, address: str) -> dict:
 
 # ── Build normalised pool_attrs from DexScreener pair ────────────────────────
 def dex_pair_to_attrs(pair: dict) -> dict:
-    """Convert a DexScreener pair dict into the same shape as GeckoTerminal attrs."""
-          if not pair:
+    if not pair:
         return {}
-              liquidity = safe_float(pair.get("liquidity", {}).get("usd"))
-              volume_1h = safe_float(pair.get("volume", {}).get("h1"))
-              fdv       = safe_float(pair.get("fdv"))
-              price     = pair.get("priceUsd", "0")
-              price_1h  = safe_float(pair.get("priceChange", {}).get("h1"))
-              name      = pair.get("baseToken", {}).get("name", "Unknown Token")
-              created   = pair.get("pairCreatedAt")  # epoch ms
-
+    liquidity = safe_float(pair.get("liquidity", {}).get("usd"))
+    volume_1h = safe_float(pair.get("volume", {}).get("h1"))
+    fdv = safe_float(pair.get("fdv"))
+    price = pair.get("priceUsd", "0")
+    price_1h = safe_float(pair.get("priceChange", {}).get("h1"))
+    name = pair.get("baseToken", {}).get("name", "Unknown Token")
+    created = pair.get("pairCreatedAt")
     created_iso = ""
     if created:
         try:
@@ -133,22 +131,18 @@ def dex_pair_to_attrs(pair: dict) -> dict:
             created_iso = dt.isoformat()
         except Exception:
             pass
-
-    # buys/sells
     txns_1h = pair.get("txns", {}).get("h1", {})
-
     return {
-        "name":            name,
-        "fdv_usd":         fdv,
-        "reserve_in_usd":  liquidity,
+        "name": name,
+        "fdv_usd": fdv,
+        "reserve_in_usd": liquidity,
         "base_token_price_usd": price,
         "pool_created_at": created_iso,
-        "volume_usd":      {"h1": volume_1h},
+        "volume_usd": {"h1": volume_1h},
         "price_change_percentage": {"h1": price_1h},
-        "transactions":    {"h1": {"buys": safe_int(txns_1h.get("buys")), "sells": safe_int(txns_1h.get("sells"))}},
-        "address":         pair.get("pairAddress", ""),
+        "transactions": {"h1": {"buys": safe_int(txns_1h.get("buys")), "sells": safe_int(txns_1h.get("sells"))}},
+        "address": pair.get("pairAddress", ""),
     }
-
 
 # ── Scoring ───────────────────────────────────────────────────────────────────
 def compute_score(pool_attrs: dict, security: dict) -> dict:
