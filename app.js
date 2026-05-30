@@ -526,5 +526,5 @@ function initApp() {
   navigate(hash);
 };
 document.addEventListener('DOMContentLoaded', () => {
-   iniGate();
+   initGate();
 });
