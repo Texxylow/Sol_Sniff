@@ -148,10 +148,6 @@ function unlockApp() {
   initApp();
 }
 
-function initGate() {
-  updateUsageDisplay();
-
-  // Already authed?
  async function initGate() {
   await updateUsageDisplay();
   if (isAuthed()) { unlockApp(); return; }
