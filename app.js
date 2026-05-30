@@ -528,4 +528,4 @@ function initApp() {
   // Route to correct page
   const hash = window.location.hash.replace('#', '') || 'dashboard';
   navigate(hash);
-});
+};
