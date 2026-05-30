@@ -115,15 +115,18 @@ async def fetch_security(client: httpx.AsyncClient, address: str) -> dict:
 
 # ── Build normalised pool_attrs from DexScreener pair ────────────────────────
 def dex_pair_to_attrs(pair: dict) -> dict:
+    """Convert a DexScreener pair dict into the same shape as GeckoTerminal attrs."""
     if not pair:
         return {}
+
     liquidity = safe_float(pair.get("liquidity", {}).get("usd"))
     volume_1h = safe_float(pair.get("volume", {}).get("h1"))
-    fdv = safe_float(pair.get("fdv"))
-    price = pair.get("priceUsd", "0")
-    price_1h = safe_float(pair.get("priceChange", {}).get("h1"))
-    name = pair.get("baseToken", {}).get("name", "Unknown Token")
-    created = pair.get("pairCreatedAt")
+    fdv       = safe_float(pair.get("fdv"))
+    price     = pair.get("priceUsd", "0")
+    price_1h  = safe_float(pair.get("priceChange", {}).get("h1"))
+    name      = pair.get("baseToken", {}).get("name", "Unknown Token")
+    created   = pair.get("pairCreatedAt")  # epoch ms
+
     created_iso = ""
     if created:
         try:
@@ -131,18 +134,22 @@ def dex_pair_to_attrs(pair: dict) -> dict:
             created_iso = dt.isoformat()
         except Exception:
             pass
+
+    # buys/sells
     txns_1h = pair.get("txns", {}).get("h1", {})
+
     return {
-        "name": name,
-        "fdv_usd": fdv,
-        "reserve_in_usd": liquidity,
+        "name":            name,
+        "fdv_usd":         fdv,
+        "reserve_in_usd":  liquidity,
         "base_token_price_usd": price,
         "pool_created_at": created_iso,
-        "volume_usd": {"h1": volume_1h},
+        "volume_usd":      {"h1": volume_1h},
         "price_change_percentage": {"h1": price_1h},
-        "transactions": {"h1": {"buys": safe_int(txns_1h.get("buys")), "sells": safe_int(txns_1h.get("sells"))}},
-        "address": pair.get("pairAddress", ""),
+        "transactions":    {"h1": {"buys": safe_int(txns_1h.get("buys")), "sells": safe_int(txns_1h.get("sells"))}},
+        "address":         pair.get("pairAddress", ""),
     }
+
 
 # ── Scoring ───────────────────────────────────────────────────────────────────
 def compute_score(pool_attrs: dict, security: dict) -> dict:
@@ -212,6 +219,7 @@ def compute_score(pool_attrs: dict, security: dict) -> dict:
     else:               fdv_score = 0
 
     base = vol_score + tx_score + liq_score + price_score + age_score + fdv_score
+
     # ── Penalties ─────────────────────────────────────────────────────────────
     penalties     = 0
     penalty_flags = []
@@ -316,6 +324,7 @@ def build_token_dict(pool: dict, security: dict) -> Optional[dict]:
 # ══════════════════════════════════════════════════════════════════════════════
 # API ENDPOINTS
 # ══════════════════════════════════════════════════════════════════════════════
+
 @router.get("/tokens")
 async def get_tokens():
     cached = _get_cache("tokens")
@@ -400,10 +409,10 @@ async def track_token(address: str):
             if addr.lower() == address.lower():
                 pool_attrs   = pool.get("attributes", {})
                 pool_address = pool_attrs.get("address", "")
-        break
+                break
 
-            # 2. Not in new pools → try GeckoTerminal token-specific pools
-            if not pool_attrs:
+        # 2. Not in new pools → try GeckoTerminal token-specific pools
+        if not pool_attrs:
             token_pools = await fetch_pools_for_token(client, address)
             if token_pools:
                 # Use the most liquid pool
