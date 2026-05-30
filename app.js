@@ -5,8 +5,6 @@
 /* ── Config ─────────────────────────────────────────────────────────────── */
 const API_BASE        = 'https://sol-sniff.onrender.com/api';
 const REFRESH_SEC     = 60;
-const ACCESS_CODE     = 'NEZER';         // correct code (case-insensitive check)
-const MAX_USES        = 10;              // ← raise this number to allow more users
 
 /* ── State ──────────────────────────────────────────────────────────────── */
 let refreshTimer    = null;
@@ -63,16 +61,17 @@ function showToast(msg) {
 function getRegistry() {
   try { return JSON.parse(localStorage.getItem('ss_registry') || '{}'); } catch { return {}; }
 }
-function saveRegistry(r) {
-  localStorage.setItem('ss_registry', JSON.stringify(r));
-}
-function usedCount() {
-  return Object.keys(getRegistry()).length;
+function isAuthed() {
+  try { return !!localStorage.getItem('ss_authed'); } catch { return false; }
 }
 
-function updateUsageDisplay() {
-  const el = document.getElementById('gate-usage');
-  if (el) el.textContent = usedCount() + ' / ' + MAX_USES + ' access slots used';
+async function updateUsageDisplay() {
+  try {
+    const res  = await fetch(API_BASE + '/access/status');
+    const data = await res.json();
+    const el = document.getElementById('gate-usage');
+    if (el) el.textContent = data.used + ' / ' + data.max + ' access slots used';
+  } catch (_) {}
 }
 
 function showGateError(msg) {
@@ -90,12 +89,12 @@ function triggerShake() {
   const card = document.getElementById('gate-card');
   if (!card) return;
   card.classList.remove('shake');
-  void card.offsetWidth; // reflow
+  void card.offsetWidth;
   card.classList.add('shake');
   setTimeout(() => card.classList.remove('shake'), 600);
 }
 
-function attemptAccess() {
+async function attemptAccess() {
   const emailEl = document.getElementById('gate-email');
   const codeEl  = document.getElementById('gate-code');
   const btn     = document.getElementById('gate-btn');
@@ -105,7 +104,7 @@ function attemptAccess() {
   const email = emailEl.value.trim().toLowerCase();
   const code  = codeEl.value.trim().toUpperCase();
 
-  if (!email || !email.includes('@') || !email.includes('.')) {
+  if (!email  !email.includes('@')  !email.includes('.')) {
     showGateError('Please enter a valid email address.');
     triggerShake(); return;
   }
@@ -113,40 +112,36 @@ function attemptAccess() {
     showGateError('Please enter the access code.');
     triggerShake(); return;
   }
-  if (code !== ACCESS_CODE) {
-    showGateError('Invalid access code. Contact Ebenezer for access.');
-    triggerShake(); return;
-  }
 
   btn.disabled = true;
   btn.textContent = 'VERIFYING…';
 
-  setTimeout(() => {
-    const reg = getRegistry();
-
-    if (reg[email]) {
-      // returning user — skip slot check
+  try {
+    const res = await fetch(API_BASE + '/access/verify', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, code }),
+    });
+    if (res.ok) {
       localStorage.setItem('ss_authed', email);
       unlockApp();
       return;
     }
-
-    // new email
-    if (usedCount() >= MAX_USES) {
-      showGateError('Access limit reached (' + MAX_USES + ' slots). Contact Ebenezer to add more.');
-      triggerShake();
-      btn.disabled = false;
-      btn.textContent = 'UNLOCK ACCESS →';
-      return;
+    const err = await res.json().catch(() => ({}));
+    if (res.status === 429) {
+      showGateError('Access limit reached. Contact Ebenezer to add more slots.');
+    } else {
+      showGateError(err.detail || 'Access denied.');
     }
-
-    reg[email] = true;
-    saveRegistry(reg);
-    localStorage.setItem('ss_authed', email);
-    unlockApp();
-  }, 800);
+    triggerShake();
+  } catch (_) {
+    showGateError('Could not reach server. Please try again.');
+    triggerShake();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'UNLOCK ACCESS →';
+  }
 }
-
 function unlockApp() {
   document.getElementById('gate-screen').style.display = 'none';
   document.getElementById('main-app').classList.remove('hidden');
@@ -157,16 +152,13 @@ function initGate() {
   updateUsageDisplay();
 
   // Already authed?
-  if (localStorage.getItem('ss_authed')) {
-    unlockApp();
-    return;
-  }
-
+ async function initGate() {
+  await updateUsageDisplay();
+  if (isAuthed()) { unlockApp(); return; }
   document.getElementById('gate-btn').addEventListener('click', attemptAccess);
   document.getElementById('gate-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('gate-code').focus(); });
   document.getElementById('gate-code').addEventListener('keydown', e => { if (e.key === 'Enter') attemptAccess(); });
 }
-
 /* ═══════════════════════════════════════════════════════════════════════════
    ROUTER
    ═══════════════════════════════════════════════════════════════════════════ */
