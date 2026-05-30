@@ -529,8 +529,3 @@ function initApp() {
   const hash = window.location.hash.replace('#', '') || 'dashboard';
   navigate(hash);
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   BOOT
-   ═══════════════════════════════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', initGate);
