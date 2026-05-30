@@ -525,3 +525,6 @@ function initApp() {
   const hash = window.location.hash.replace('#', '') || 'dashboard';
   navigate(hash);
 };
+document.addEventListener('DOMContentLoaded', () => {
+   iniGate();
+});
