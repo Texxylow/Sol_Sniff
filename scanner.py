@@ -117,14 +117,14 @@ async def fetch_security(client: httpx.AsyncClient, address: str) -> dict:
 def dex_pair_to_attrs(pair: dict) -> dict:
     """Convert a DexScreener pair dict into the same shape as GeckoTerminal attrs."""
     if not pair:
-        return {}
-    liquidity = safe_float(pair.get("liquidity", {}).get("usd"))
-    volume_1h = safe_float(pair.get("volume", {}).get("h1"))
-    fdv       = safe_float(pair.get("fdv"))
-    price     = pair.get("priceUsd", "0")
-    price_1h  = safe_float(pair.get("priceChange", {}).get("h1"))
-    name      = pair.get("baseToken", {}).get("name", "Unknown Token")
-    created   = pair.get("pairCreatedAt")  # epoch ms
+            return {}
+        liquidity = safe_float(pair.get("liquidity", {}).get("usd"))
+        volume_1h = safe_float(pair.get("volume", {}).get("h1"))
+        fdv       = safe_float(pair.get("fdv"))
+        price     = pair.get("priceUsd", "0")
+        price_1h  = safe_float(pair.get("priceChange", {}).get("h1"))
+        name      = pair.get("baseToken", {}).get("name", "Unknown Token")
+        created   = pair.get("pairCreatedAt")  # epoch ms
 
     created_iso = ""
     if created:
