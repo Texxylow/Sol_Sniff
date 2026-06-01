@@ -188,7 +188,7 @@ def compute_score(pool_attrs: dict, security: dict) -> dict:
     elif volume_1h >= 50_000:  vol_score = 20
     elif volume_1h >= 20_000:  vol_score = 15
     elif volume_1h >= 5_000:   vol_score = 10
-   else:                      vol_score = 0
+    else:                      vol_score = 0
 
     total_txns = txns_buy + txns_sell
     buy_ratio  = (txns_buy / total_txns) if total_txns > 0 else 0.5
