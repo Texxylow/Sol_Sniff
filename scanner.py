@@ -184,19 +184,19 @@ def compute_score(pool_attrs: dict, security: dict) -> dict:
         top10_pct *= 100
 
     # ── Base scores ───────────────────────────────────────────────────────────
-    if   volume_1h >= 100_000: vol_score = 25
-    elif volume_1h >= 50_000:  vol_score = 20
-    elif volume_1h >= 20_000:  vol_score = 15
-    elif volume_1h >= 5_000:   vol_score = 10
-    else:                      vol_score = 0
+    if   volume_1h >= 500_000: vol_score = 25
+    elif volume_1h >= 100_000:  vol_score = 20
+    elif volume_1h >= 50_000:  vol_score = 15
+    elif volume_1h >= 20_000:   vol_score = 10
+    elif volume_1h >= 50_000:   vol_score = 5
 
     total_txns = txns_buy + txns_sell
     buy_ratio  = (txns_buy / total_txns) if total_txns > 0 else 0.5
     tx_score   = round(buy_ratio * 20)
 
-    if   liquidity >= 50_000: liq_score = 20
-    elif liquidity >= 20_000: liq_score = 15
-    elif liquidity >= 10_000: liq_score = 10
+    if   liquidity >= 100_000: liq_score = 20
+    elif liquidity >= 50_000: liq_score = 15
+    elif liquidity >= 20_000: liq_score = 10
     elif liquidity >= 5_000:  liq_score = 5
     else:                     liq_score = 0
 
@@ -212,10 +212,10 @@ def compute_score(pool_attrs: dict, security: dict) -> dict:
     elif age_hours <= 24: age_score = 2
     else:                 age_score = 0
 
-    if   fdv <= 5_000:  fdv_score = 10
-    elif fdv <= 10_000: fdv_score = 8
-    elif fdv <= 15_000: fdv_score = 5
-    elif fdv <= 20_000: fdv_score = 2
+    if   fdv <= 10_000:  fdv_score = 10
+    elif fdv <= 30_000: fdv_score = 8
+    elif fdv <= 75_000: fdv_score = 5
+    elif fdv <= 200_000: fdv_score = 2
     else:               fdv_score = 0
 
     base = vol_score + tx_score + liq_score + price_score + age_score + fdv_score
@@ -270,7 +270,7 @@ def passes_filter(pool_attrs: dict, score_data: dict) -> bool:
     age_hours = score_data["age_hours"]
     flags     = score_data["security_flags"]
 
-    if fdv       > 20_000: return False
+    if fdv       > 200_000: return False
     if age_hours > 24:     return False
     if volume_1h < 5_000:  return False
     if liquidity < 5_000:  return False
