@@ -278,7 +278,7 @@
   <div id="solsniff-chat-panel" class="solsniff-hidden">
     <div id="solsniff-chat-header">
       <div id="solsniff-chat-header-left">
-        <img src="https://sol-sniff.onrender.com/logo.jpg" alt="Solsniff" />
+        <img src="https://sol-sniff.onrender.com/logo.jpg" alt="Solsniff" id="solsniff-header-logo" />
         <div>
           <div id="solsniff-chat-title">SOLSNIFF</div>
           <div id="solsniff-chat-subtitle"><span class="solsniff-dot"></span>ASSISTANT</div>
@@ -310,8 +310,10 @@
 
   /* ---- Toggle button ---- */
   #solsniff-chat-toggle {
-    width: 60px;
-    height: 60px;
+    width: 60px !important;
+    height: 60px !important;
+    max-width: 60px !important;
+    max-height: 60px !important;
     border-radius: 14px;
     border: 1px solid rgba(168, 85, 247, 0.5);
     background: radial-gradient(circle at 30% 30%, #1a1030, #05040a);
@@ -336,9 +338,12 @@
   }
 
   #solsniff-chat-toggle img {
-    width: 42px;
-    height: 42px;
-    object-fit: contain;
+    width: 42px !important;
+    height: 42px !important;
+    max-width: 42px !important;
+    max-height: 42px !important;
+    object-fit: contain !important;
+    display: block !important;
   }
 
   /* ---- Panel ---- */
@@ -385,10 +390,14 @@
   }
 
   #solsniff-header-logo {
-    width: 32px;
-    height: 32px;
+    width: 32px !important;
+    height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
     border-radius: 8px;
     box-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
+    object-fit: contain !important;
+    display: block !important;
   }
 
   #solsniff-chat-title {
@@ -517,7 +526,7 @@
 
 <script>
   (function () {
-    const BACKEND_URL = "https://solsniffchatbot.onrender.com/chat"; // change to your deployed backend URL
+    const BACKEND_URL = "https://solsniffchatbot.onrender.com/chat"; // deployed backend
 
     const toggle = document.getElementById("solsniff-chat-toggle");
     const panel = document.getElementById("solsniff-chat-panel");
