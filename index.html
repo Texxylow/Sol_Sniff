@@ -258,5 +258,329 @@
 <div id="toast"></div>
 
 <script src="app.js"></script>
+<!--
+  Solsniff Chat Widget — branded version
+  ---------------------------------------
+  Drop this block right before </body> on any page.
+  Talks to your FastAPI backend's /chat endpoint.
+
+  Update BACKEND_URL below to point at your deployed backend.
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<div id="solsniff-chat-widget">
+  <button id="solsniff-chat-toggle" aria-label="Open chat">
+    <img src="https://sol-sniff.onrender.com/logo.jpg" alt="Solsniff" />
+  </button>
+
+  <div id="solsniff-chat-panel" class="solsniff-hidden">
+    <div id="solsniff-chat-header">
+      <div id="solsniff-chat-header-left">
+        <img src="https://sol-sniff.onrender.com/logo.jpg" alt="Solsniff" />
+        <div>
+          <div id="solsniff-chat-title">SOLSNIFF</div>
+          <div id="solsniff-chat-subtitle"><span class="solsniff-dot"></span>ASSISTANT</div>
+        </div>
+      </div>
+      <button id="solsniff-chat-close" aria-label="Close chat">✕</button>
+    </div>
+    <div id="solsniff-chat-messages"></div>
+    <form id="solsniff-chat-form">
+      <input
+        id="solsniff-chat-input"
+        type="text"
+        placeholder="Ask about Solsniff..."
+        autocomplete="off"
+      />
+      <button type="submit">SEND</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  #solsniff-chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ---- Toggle button ---- */
+  #solsniff-chat-toggle {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    background: radial-gradient(circle at 30% 30%, #1a1030, #05040a);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow:
+      0 0 0 1px rgba(168, 85, 247, 0.15),
+      0 0 20px rgba(168, 85, 247, 0.45),
+      0 0 40px rgba(34, 211, 238, 0.15);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  #solsniff-chat-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 0 1px rgba(168, 85, 247, 0.3),
+      0 0 26px rgba(168, 85, 247, 0.6),
+      0 0 50px rgba(34, 211, 238, 0.25);
+  }
+
+  #solsniff-chat-toggle img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+  }
+
+  /* ---- Panel ---- */
+  #solsniff-chat-panel {
+    position: absolute;
+    bottom: 76px;
+    right: 0;
+    width: 360px;
+    height: 480px;
+    background:
+      linear-gradient(rgba(168, 85, 247, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(168, 85, 247, 0.04) 1px, transparent 1px),
+      #05040a;
+    background-size: 24px 24px, 24px 24px, auto;
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgba(168, 85, 247, 0.1),
+      0 12px 40px rgba(0, 0, 0, 0.6),
+      0 0 60px rgba(34, 211, 238, 0.08);
+  }
+
+  #solsniff-chat-panel.solsniff-hidden {
+    display: none;
+  }
+
+  /* ---- Header ---- */
+  #solsniff-chat-header {
+    background: #000;
+    border-bottom: 1px solid rgba(168, 85, 247, 0.35);
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #solsniff-chat-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #solsniff-header-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
+  }
+
+  #solsniff-chat-title {
+    font-family: 'Silkscreen', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #a855f7, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 1px;
+  }
+
+  #solsniff-chat-subtitle {
+    font-size: 10px;
+    color: #7d7d95;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 2px;
+  }
+
+  .solsniff-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22d3ee;
+    box-shadow: 0 0 6px #22d3ee;
+    display: inline-block;
+  }
+
+  #solsniff-chat-close {
+    background: none;
+    border: none;
+    color: #7d7d95;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 4px;
+  }
+
+  #solsniff-chat-close:hover {
+    color: #22d3ee;
+  }
+
+  /* ---- Messages ---- */
+  #solsniff-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #solsniff-chat-messages::-webkit-scrollbar {
+    width: 6px;
+  }
+  #solsniff-chat-messages::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.4);
+    border-radius: 3px;
+  }
+
+  .solsniff-msg {
+    max-width: 85%;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  .solsniff-msg.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+    color: #fff;
+    border-bottom-right-radius: 3px;
+  }
+
+  .solsniff-msg.bot {
+    align-self: flex-start;
+    background: #14121f;
+    border: 1px solid rgba(34, 211, 238, 0.25);
+    color: #d8d8e8;
+    border-bottom-left-radius: 3px;
+  }
+
+  /* ---- Input form ---- */
+  #solsniff-chat-form {
+    display: flex;
+    border-top: 1px solid rgba(168, 85, 247, 0.35);
+    background: #000;
+  }
+
+  #solsniff-chat-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: #eaeaf5;
+    padding: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    outline: none;
+  }
+
+  #solsniff-chat-input::placeholder {
+    color: #55556b;
+  }
+
+  #solsniff-chat-form button {
+    border: none;
+    background: transparent;
+    color: #22d3ee;
+    padding: 0 16px;
+    font-family: 'Silkscreen', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+  }
+
+  #solsniff-chat-form button:hover {
+    color: #a855f7;
+  }
+</style>
+
+<script>
+  (function () {
+    const BACKEND_URL = "https://solsniffchatbot.onrender.com/chat"; // change to your deployed backend URL
+
+    const toggle = document.getElementById("solsniff-chat-toggle");
+    const panel = document.getElementById("solsniff-chat-panel");
+    const closeBtn = document.getElementById("solsniff-chat-close");
+    const form = document.getElementById("solsniff-chat-form");
+    const input = document.getElementById("solsniff-chat-input");
+    const messages = document.getElementById("solsniff-chat-messages");
+
+    let history = [];
+
+    toggle.addEventListener("click", () => {
+      panel.classList.toggle("solsniff-hidden");
+    });
+    closeBtn.addEventListener("click", () => {
+      panel.classList.add("solsniff-hidden");
+    });
+
+    function addMessage(role, text) {
+      const div = document.createElement("div");
+      div.className = "solsniff-msg " + (role === "user" ? "user" : "bot");
+      div.textContent = text;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage("user", text);
+      input.value = "";
+
+      const thinkingDiv = document.createElement("div");
+      thinkingDiv.className = "solsniff-msg bot";
+      thinkingDiv.textContent = "...";
+      messages.appendChild(thinkingDiv);
+      messages.scrollTop = messages.scrollHeight;
+
+      try {
+        const res = await fetch(BACKEND_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text, history }),
+        });
+        const data = await res.json();
+        thinkingDiv.remove();
+
+        if (!res.ok) {
+          addMessage("bot", "Sorry, something went wrong. Try again shortly.");
+          return;
+        }
+
+        addMessage("bot", data.reply);
+        history.push({ role: "user", content: text });
+        history.push({ role: "assistant", content: data.reply });
+      } catch (err) {
+        thinkingDiv.remove();
+        addMessage("bot", "Sorry, I couldn't reach the server.");
+      }
+    });
+  })();
+</script>
+
 </body>
 </html>
